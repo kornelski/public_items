@@ -111,15 +111,15 @@ impl<'a> RustdocJsonAnalyzer<'a> {
             item.visibility == Visibility::Public
         }
     }
-}
 
-fn item_name_with_parents(item_id_to_container: &HashMap<&Id, &Item>, item: &Item, s: &mut String) {
-    let effective_item_id = get_effective_id(item);
-    if let Some(container) = item_id_to_container.get(effective_item_id) {
-        item_name_with_parents(item_id_to_container, container, s);
-        s.push_str(&format!("::{}", get_effective_name(item)));
-    } else {
-        s.push_str(&get_effective_name(item).to_string());
+    fn item_name_with_parents(&self, item: &Item, s: &mut String) {
+        let effective_item_id = get_effective_id(item);
+        if let Some(container) = item_id_to_container.get(effective_item_id) {
+            item_name_with_parents(item_id_to_container, container, s);
+            s.push_str(&format!("::{}", get_effective_name(item)));
+        } else {
+            s.push_str(&get_effective_name(item).to_string());
+        }
     }
 }
 
