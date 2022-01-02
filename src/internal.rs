@@ -13,28 +13,19 @@ const ROOT_CRATE_ID: u32 = 0;
 /// ```bash
 /// RUSTDOCFLAGS='-Z unstable-options --output-format json' cargo +nightly doc --lib --no-deps
 /// ```
-/// to generate rustdoc JSON.
+/// to generate rustdoc JSON. The rustdoc JSON format is documented here:
+/// <https://rust-lang.github.io/rfcs/2963-rustdoc-json.html>.
 ///
 /// # Errors
 ///
 /// E.g. if the JSON is invalid.
 pub fn from_rustdoc_json_str(rustdoc_json_str: &str) -> Result<HashSet<String>> {
     let rustdoc_json: Crate = serde_json::from_str(rustdoc_json_str)?;
+    let analyzer = RustdocJsonAnalyzer::new(&rustdoc_json);
 
     let index = rustdoc_json.index;
 
-    let mut item_id_to_container = HashMap::new();
     let mut public_items = vec![];
-
-    // First map up what items are contained in what items. We can't limit this to
-    // just or crate since some traits (e.g. Clone) are defined outside of our crate.
-    for item in index.values() {
-        if let Some(contained_item_ids) = contained_items_in_item(item) {
-            for contained_item_id in contained_item_ids {
-                item_id_to_container.insert(contained_item_id, item);
-            }
-        }
-    }
 
     // Now find all public items in the root crate.
     for item in index.values() {
@@ -42,30 +33,7 @@ pub fn from_rustdoc_json_str(rustdoc_json_str: &str) -> Result<HashSet<String>> 
             continue;
         }
 
-        let effectively_public = if let Some(container) = item_id_to_container.get(&item.id) {
-            match &container.inner {
-                ItemEnum::Impl(i) => {
-                    if let Some(implemented_trait) = match &i.trait_ {
-                        Some(Type::ResolvedPath { id, .. }) => index.get(id),
-                        _ => None,
-                    } {
-                        implemented_trait.visibility == Visibility::Public
-                    } else {
-                        false
-                    }
-                }
-                // The item is contained in an enum, so it is an enum variant.
-                // If the enum itself is public, then so are its variants. Since
-                // the enum would not be in the rustdoc JSON if it was not
-                // public, we know this variant is public.
-                ItemEnum::Enum(_) => true,
-                _ => false,
-            }
-        } else {
-            false
-        };
-
-        // Enum variants are public by default
+        let effectively_public = analyzer.item_is_effectively_public(item);
         if item.visibility == Visibility::Public || effectively_public {
             public_items.push(item);
         }
@@ -79,6 +47,70 @@ pub fn from_rustdoc_json_str(rustdoc_json_str: &str) -> Result<HashSet<String>> 
     }
 
     Ok(res.into_iter().collect::<HashSet<_>>())
+}
+
+/// Internal helper to keep track of state while analyzing the JSON
+struct RustdocJsonAnalyzer<'a> {
+    rustdoc_json: &'a Crate,
+
+    /// Maps an item ID to the container that contains it. Note that the
+    /// container itself also is an item.
+    item_id_to_container: HashMap<&'a Id, &'a Item>,
+}
+
+impl<'a> RustdocJsonAnalyzer<'a> {
+    fn new(rustdoc_json: &'a Crate) -> RustdocJsonAnalyzer<'a> {
+        // Map up what items are contained in what items. We can't limit this to
+        // just our crate (the root crate) since some traits (e.g. Clone) are
+        // defined outside of our crate.
+        let mut item_id_to_container: HashMap<&Id, &Item> = HashMap::new();
+        for item in rustdoc_json.index.values() {
+            if let Some(contained_item_ids) = contained_items_in_item(item) {
+                for contained_item_id in contained_item_ids {
+                    item_id_to_container.insert(contained_item_id, item);
+                }
+            }
+        }
+
+        Self {
+            rustdoc_json,
+            item_id_to_container,
+        }
+    }
+
+    /// Some items, notably enum variants in public enums, and associated
+    /// functions in public traits, are public even though they have default
+    /// visibility. This helper takes care of such cases.
+    fn item_is_effectively_public(&self, item: &Item) -> bool {
+        if let Some(container) = self.item_id_to_container.get(&item.id) {
+            match &container.inner {
+                ItemEnum::Impl(i) => {
+                    if let Some(implemented_trait) = match &i.trait_ {
+                        Some(Type::ResolvedPath { id, .. }) => self.rustdoc_json.index.get(id),
+                        _ => None,
+                    } {
+                        implemented_trait.visibility == Visibility::Public
+                    } else {
+                        false
+                    }
+                }
+
+                // The item is contained in an enum, so it is an enum variant.
+                // If the enum itself is public, then so are its variants. Since
+                // the enum would not be in the rustdoc JSON if it was not
+                // public, we know this variant is public.
+                ItemEnum::Enum(_) => true,
+
+                // The item is contained neither in an enum nor a trait. Such
+                // items are only public if they actually are declared public.
+                _ => item.visibility == Visibility::Public,
+            }
+        } else {
+            // The item is not contained in some other item. So it is only
+            // public if declared public.
+            item.visibility == Visibility::Public
+        }
+    }
 }
 
 fn item_name_with_parents(item_id_to_container: &HashMap<&Id, &Item>, item: &Item, s: &mut String) {
