@@ -42,7 +42,7 @@ pub fn from_rustdoc_json_str(rustdoc_json_str: &str) -> Result<HashSet<String>> 
     let mut res = vec![];
     for public_item in public_items {
         let mut s = String::new();
-        item_name_with_parents(&item_id_to_container, public_item, &mut s);
+        analyzer.item_name_with_parents(public_item, &mut s);
         res.push(s);
     }
 
@@ -121,13 +121,18 @@ impl<'a> RustdocJsonAnalyzer<'a> {
             s.push_str(&get_effective_name(item).to_string());
         }
     }
+
+    fn container_for_item(&self, item: &Item) -> Option<&Item> {
+        let effective_item_id = get_effective_id(item);
+        self.item_id_to_container.get(effective_item_id)
+    }
 }
 
 fn get_effective_id(item: &Item) -> &Id {
     match &item.inner {
         ItemEnum::Impl(i) => match &i.for_ {
             Type::ResolvedPath { id, .. } => id,
-            _ => todo!(),
+            _ => &item.id,
         },
         _ => &item.id,
     }
@@ -151,7 +156,7 @@ fn get_effective_name(item: &Item) -> &str {
         ItemEnum::Import(i) => &i.name,
         ItemEnum::Impl(i) => match &i.for_ {
             Type::ResolvedPath { name, .. } => name.as_ref(),
-            _ => panic!("Don't know what to do with {:?}", item),
+            _ => item.name.as_ref().unwrap(),
         },
         _ => item.name.as_ref().unwrap(),
     }
