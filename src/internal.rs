@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use rustdoc_types::{Crate, Id, Impl, Item, ItemEnum, Type, Visibility};
+use rustdoc_types::{Crate, Generics, Id, Impl, Item, ItemEnum, Type, Visibility};
 
 use crate::Result;
 
@@ -24,7 +24,7 @@ pub fn from_rustdoc_json_str(rustdoc_json_str: &str) -> Result<HashSet<String>> 
 
     Ok(helper
         .public_items_in_root_crate()
-        .map(|item| helper.full_item_name(item))
+        .map(|item| helper.full_item_name_with_type_prefix_and_suffix(item))
         .collect())
 }
 
@@ -112,6 +112,70 @@ impl<'a> RustdocJsonHelper<'a> {
             }
         }
         s
+    }
+
+    fn full_item_name_with_type_prefix_and_suffix(&self, item: &Item) -> String {
+        String::from("pub ")
+            + self.item_type_prefix(item)
+            + " "
+            + &self.full_item_name(item)
+            + &self.item_type_suffix(item)
+    }
+
+    fn item_type_prefix<'b>(&self, item: &'b Item) -> &'b str {
+        match &item.inner {
+            ItemEnum::Module(_) => "mod",
+            ItemEnum::ExternCrate { .. } => todo!(),
+            ItemEnum::Import(_) => "use",
+            ItemEnum::Union(_) => "union",
+            ItemEnum::Struct(_) => "struct",
+            ItemEnum::StructField(_) => "struct", // For grouped sorting
+            ItemEnum::Enum(_) => "enum",
+            ItemEnum::Variant(_) => "enum", // For grouped sorting
+            ItemEnum::Function(_) => "fn",
+            ItemEnum::Trait(_) => "trait",
+            ItemEnum::TraitAlias(_) => "trait alias",
+            ItemEnum::Method(_) => "fn",
+            ItemEnum::Impl(_) => "impl",
+            ItemEnum::Typedef(_) => "type",
+            ItemEnum::OpaqueTy(_) => todo!(),
+            ItemEnum::Constant(_) => "const",
+            ItemEnum::Static(_) => "static",
+            ItemEnum::ForeignType => todo!(),
+            ItemEnum::Macro(_) => todo!(),
+            ItemEnum::ProcMacro(_) => todo!(),
+            ItemEnum::PrimitiveType(name) => &name,
+            ItemEnum::AssocConst { .. } => "const",
+            ItemEnum::AssocType { .. } => "type",
+        }
+    }
+
+    fn item_type_suffix(&self, item: &Item) -> String {
+        match &item.inner {
+            ItemEnum::Union(u) => self.generics_to_string(&u.generics),
+            ItemEnum::Struct(s) => self.generics_to_string(&s.generics),
+            ItemEnum::StructField(_) => String::from(": ..."),
+            ItemEnum::Variant(_) => String::from(": ..."),
+            ItemEnum::Function(_) => String::from("(...) -> ..."),
+            ItemEnum::Trait(t) => self.generics_to_string(&t.generics),
+            ItemEnum::Method(_) => String::from("(...) -> ..."),
+            ItemEnum::Typedef(_) => String::from("= ..."),
+            ItemEnum::Constant(_) => String::from("= ..."),
+            ItemEnum::Static(_) => String::from("= ..."),
+            ItemEnum::PrimitiveType(name) => name.clone(),
+            _ => String::from(""),
+        }
+        .to_owned()
+    }
+
+    fn generics_to_string(&self, generics: &Generics) -> String {
+        String::from(
+            if generics.params.len() == 0 && generics.where_predicates.len() == 0 {
+                ""
+            } else {
+                "<...> where ..."
+            },
+        )
     }
 
     fn container_for_item(&self, item: &Item) -> Option<&Item> {
