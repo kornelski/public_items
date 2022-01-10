@@ -158,7 +158,7 @@ impl<'a> RustdocJsonHelper<'a> {
             ItemEnum::Variant(_) => String::from(": ..."),
             ItemEnum::Function(f) => self.fn_decl_to_string(&f.decl),
             ItemEnum::Trait(t) => self.generics_to_string(&t.generics),
-            ItemEnum::Method(_) => String::from("(...) -> ..."),
+            ItemEnum::Method(m) => self.fn_decl_to_string(&m.decl),
             ItemEnum::Typedef(_) => String::from("= ..."),
             ItemEnum::Constant(_) => String::from("= ..."),
             ItemEnum::Static(_) => String::from("= ..."),
@@ -185,7 +185,7 @@ impl<'a> RustdocJsonHelper<'a> {
                 args,
                 param_names,
             } => name.clone(),
-            Type::Generic(g) => format!("generic-{}", g),
+            Type::Generic(g) => format!("{}", g),
             Type::Primitive(p) => p.to_owned(),
             Type::FunctionPointer(_) => todo!(),
             Type::Tuple(types) => self.to_str_tuple(&types),
@@ -198,7 +198,18 @@ impl<'a> RustdocJsonHelper<'a> {
                 lifetime,
                 mutable,
                 type_,
-            } => todo!(),
+            } => {
+                let mut s = String::from("&");
+                if let Some(l) = lifetime {
+                    s.push_str(l);
+                    s.push_str(" ");
+                }
+                if *mutable {
+                    s.push_str("mut ")
+                }
+                s.push_str(&self.type_to_string(type_));
+                s
+            }
             Type::QualifiedPath {
                 name,
                 self_type,
