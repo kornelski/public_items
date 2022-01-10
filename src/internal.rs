@@ -188,7 +188,7 @@ impl<'a> RustdocJsonHelper<'a> {
             Type::Generic(_) => todo!(),
             Type::Primitive(_) => todo!(),
             Type::FunctionPointer(_) => todo!(),
-            Type::Tuple(_) => todo!(),
+            Type::Tuple(types) => self.to_str_tuple(&types),
             Type::Slice(_) => todo!(),
             Type::Array { type_, len } => todo!(),
             Type::ImplTrait(_) => todo!(),
@@ -239,6 +239,14 @@ impl<'a> RustdocJsonHelper<'a> {
     fn container_for_item(&self, item: &Item) -> Option<&Item> {
         let effective_item_id = get_effective_id(item);
         self.item_id_to_container.get(effective_item_id).copied()
+    }
+
+    fn to_str_tuple(&self, types: &[Type]) -> String {
+        let mut s = String::from("(");
+        let type_strings: Vec<String> = types.iter().map(|i| self.type_to_string(i)).collect();
+        type_strings.join(",");
+        s.push_str(")");
+        s
     }
 }
 
