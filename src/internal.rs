@@ -189,8 +189,6 @@ impl<'a> RustdocJsonHelper<'a> {
         if generics.params.len() == 0 && generics.where_predicates.len() == 0 {
             s.push_str("");
         } else {
-            let mut one_added = false;
-
             if generics.where_predicates.len() > 0 {
                 s.push_str(" where ...");
             }
