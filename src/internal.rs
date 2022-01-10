@@ -204,7 +204,7 @@ impl<'a> RustdocJsonHelper<'a> {
 }
 
 fn generic_to_string(generic_param_def: &rustdoc_types::GenericParamDef) -> String {
-    format!("{:?}", generic_param_def.name)
+    format!("{}", generic_param_def.name)
 }
 
 fn get_effective_id(item: &Item) -> &Id {
