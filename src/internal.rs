@@ -135,7 +135,7 @@ impl<'a> RustdocJsonHelper<'a> {
             ItemEnum::Function(_) => "fn",
             ItemEnum::Trait(_) => "trait",
             ItemEnum::TraitAlias(_) => "trait alias",
-            ItemEnum::Method(_) => "fn",
+            ItemEnum::Method(_) => "fnm",
             ItemEnum::Impl(_) => "impl",
             ItemEnum::Typedef(_) => "type",
             ItemEnum::OpaqueTy(_) => todo!(),
@@ -156,7 +156,7 @@ impl<'a> RustdocJsonHelper<'a> {
             ItemEnum::Struct(s) => self.generics_to_string(&s.generics),
             ItemEnum::StructField(_) => String::from(": ..."),
             ItemEnum::Variant(_) => String::from(": ..."),
-            ItemEnum::Function(_) => String::from("(...) -> ..."),
+            ItemEnum::Function(f) => self.fn_decl_to_string(&f.decl),
             ItemEnum::Trait(t) => self.generics_to_string(&t.generics),
             ItemEnum::Method(_) => String::from("(...) -> ..."),
             ItemEnum::Typedef(_) => String::from("= ..."),
@@ -166,6 +166,45 @@ impl<'a> RustdocJsonHelper<'a> {
             _ => String::from(""),
         }
         .to_owned()
+    }
+
+    fn fn_decl_to_string(&self, decl: &rustdoc_types::FnDecl) -> String {
+        let mut s = String::from("(...) -> ");
+        s.push_str(&match &decl.output {
+            Some(foo) => self.type_to_string(&foo),
+            None => "".to_owned(),
+        });
+        s
+    }
+
+    fn type_to_string(&self, ty: &Type) -> String {
+        match ty {
+            Type::ResolvedPath {
+                name,
+                id,
+                args,
+                param_names,
+            } => name.clone(),
+            Type::Generic(_) => todo!(),
+            Type::Primitive(_) => todo!(),
+            Type::FunctionPointer(_) => todo!(),
+            Type::Tuple(_) => todo!(),
+            Type::Slice(_) => todo!(),
+            Type::Array { type_, len } => todo!(),
+            Type::ImplTrait(_) => todo!(),
+            Type::Infer => todo!(),
+            Type::RawPointer { mutable, type_ } => todo!(),
+            Type::BorrowedRef {
+                lifetime,
+                mutable,
+                type_,
+            } => todo!(),
+            Type::QualifiedPath {
+                name,
+                self_type,
+                trait_,
+            } => todo!(),
+        }
     }
 
     fn generics_to_string(&self, generics: &Generics) -> String {
