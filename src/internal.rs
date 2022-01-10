@@ -189,7 +189,7 @@ impl<'a> RustdocJsonHelper<'a> {
             Type::Primitive(p) => p.to_owned(),
             Type::FunctionPointer(_) => todo!(),
             Type::Tuple(types) => self.to_str_tuple(&types),
-            Type::Slice(_) => todo!(),
+            Type::Slice(ty) => format!("[{}]", self.type_to_string(ty)),
             Type::Array { type_, len } => todo!(),
             Type::ImplTrait(_) => todo!(),
             Type::Infer => todo!(),
