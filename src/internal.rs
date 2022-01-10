@@ -169,19 +169,44 @@ impl<'a> RustdocJsonHelper<'a> {
     }
 
     fn generics_to_string(&self, generics: &Generics) -> String {
-        String::from(
-            if generics.params.len() == 0 && generics.where_predicates.len() == 0 {
-                ""
+        let mut s = String::new();
+        let mut at_least_one_generic_param_added = false;
+
+        for generic_param_def in &generics.params {
+            if !at_least_one_generic_param_added {
+                at_least_one_generic_param_added = true;
+                s.push_str("<");
             } else {
-                "<...> where ..."
-            },
-        )
+                s.push_str(",");
+            }
+            s.push_str(&generic_to_string(generic_param_def));
+        }
+
+        if at_least_one_generic_param_added {
+            s.push_str(">");
+        }
+
+        if generics.params.len() == 0 && generics.where_predicates.len() == 0 {
+            s.push_str("");
+        } else {
+            let mut one_added = false;
+
+            if generics.where_predicates.len() > 0 {
+                s.push_str(" where ...");
+            }
+        }
+
+        s
     }
 
     fn container_for_item(&self, item: &Item) -> Option<&Item> {
         let effective_item_id = get_effective_id(item);
         self.item_id_to_container.get(effective_item_id).copied()
     }
+}
+
+fn generic_to_string(generic_param_def: &rustdoc_types::GenericParamDef) -> String {
+    format!("{:?}", generic_param_def.name)
 }
 
 fn get_effective_id(item: &Item) -> &Id {
