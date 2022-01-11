@@ -85,7 +85,7 @@ impl<'a> RustdocJsonHelper<'a> {
                 // If the enum itself is public, then so are its variants. Since
                 // the enum would not be in the rustdoc JSON if it was not
                 // public, we know this variant is public.
-                | ItemEnum::Enum(_) => true,
+                | ItemEnum::Enum(_) => false,
 
                 // The item is contained neither in an enum nor a trait. Such
                 // items are only public if they actually are declared public.
