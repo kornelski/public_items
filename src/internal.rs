@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use rustdoc_types::{Crate, Generics, Id, Impl, Item, ItemEnum, Type, Visibility, GenericArgs};
+use rustdoc_types::{Crate, GenericArgs, Generics, Id, Impl, Item, ItemEnum, Type, Visibility};
 
 use crate::Result;
 
@@ -190,8 +190,7 @@ impl<'a> RustdocJsonHelper<'a> {
                     s.push_str(&self.generics_args_to_string(generics));
                 }
                 s
-
-            },
+            }
             Type::Generic(g) => format!("{}", g),
             Type::Primitive(p) => p.to_owned(),
             Type::FunctionPointer(_) => todo!(),
@@ -269,8 +268,17 @@ impl<'a> RustdocJsonHelper<'a> {
 
     fn generics_args_to_string(&self, generics: GenericArgs) -> String {
         match generics {
-            GenericArgs::AngleBracketed { args, bindings } => format!(""),
-            GenericArgs::Parenthesized { inputs, output } => todo!(),
+            GenericArgs::AngleBracketed { args, bindings } => {
+                let mut s = String::from("<");
+                for a in args {
+
+
+                }
+                format!("")
+            }
+            GenericArgs::Parenthesized { inputs, output } => {
+                format!("")
+            }
         }
     }
 }
