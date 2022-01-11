@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
-use rustdoc_types::{Crate, GenericArgs, Generics, Id, Impl, Item, ItemEnum, Type, Visibility};
+use rustdoc_types::{
+    Crate, GenericArg, GenericArgs, Generics, Id, Impl, Item, ItemEnum, Type, Visibility,
+};
 
 use crate::Result;
 
@@ -170,7 +172,12 @@ impl<'a> RustdocJsonHelper<'a> {
 
     fn fn_decl_to_string(&self, decl: &rustdoc_types::FnDecl) -> String {
         let mut s = String::from("(");
-        let a: Vec<String> = decl.inputs.iter().map(|i| &i.1).map(|t| self.type_to_string(&t)).collect();
+        let a: Vec<String> = decl
+            .inputs
+            .iter()
+            .map(|i| &i.1)
+            .map(|t| self.type_to_string(&t))
+            .collect();
         s.push_str(&a.join(", "));
         s.push_str(") -> ");
         s.push_str(&match &decl.output {
@@ -272,16 +279,28 @@ impl<'a> RustdocJsonHelper<'a> {
     fn generics_arg_to_string(&self, generics: &GenericArgs) -> String {
         match generics {
             GenericArgs::AngleBracketed { args, bindings } => {
-                let mut s = String::from("<");
-                for a in args {
-
-
+                let mut s = String::new();
+                if args.len() > 0 {
+                    s.push_str("<");
+                    for a in args {
+                        s.push_str(&self.generic_arg_to_string(a));
+                    }
+                    s.push_str(">");
                 }
-                format!("")
+                s
             }
             GenericArgs::Parenthesized { inputs, output } => {
-                format!("")
+                format!("GenericArgs::Parenthesized")
             }
+        }
+    }
+
+    fn generic_arg_to_string(&self, generic_arg: &GenericArg) -> String {
+        match generic_arg {
+            GenericArg::Lifetime(s) => s.clone(),
+            GenericArg::Type(t) => self.type_to_string(t),
+            GenericArg::Const(_) => todo!(),
+            GenericArg::Infer => todo!(),
         }
     }
 }
