@@ -169,7 +169,10 @@ impl<'a> RustdocJsonHelper<'a> {
     }
 
     fn fn_decl_to_string(&self, decl: &rustdoc_types::FnDecl) -> String {
-        let mut s = String::from("(...) -> ");
+        let mut s = String::from("(");
+        let a: Vec<String> = decl.inputs.iter().map(|i| &i.1).map(|t| self.type_to_string(&t)).collect();
+        s.push_str(&a.join(", "));
+        s.push_str(") -> ");
         s.push_str(&match &decl.output {
             Some(foo) => self.type_to_string(&foo),
             None => "".to_owned(),
@@ -187,7 +190,7 @@ impl<'a> RustdocJsonHelper<'a> {
             } => {
                 let mut s = String::from(name);
                 if let Some(g) = args {
-                    s.push_str(&self.generics_args_to_string(generics));
+                    s.push_str(&self.generics_arg_to_string(g));
                 }
                 s
             }
@@ -266,7 +269,7 @@ impl<'a> RustdocJsonHelper<'a> {
         s
     }
 
-    fn generics_args_to_string(&self, generics: GenericArgs) -> String {
+    fn generics_arg_to_string(&self, generics: &GenericArgs) -> String {
         match generics {
             GenericArgs::AngleBracketed { args, bindings } => {
                 let mut s = String::from("<");
