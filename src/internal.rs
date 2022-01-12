@@ -199,6 +199,8 @@ impl<'a> RustdocJsonHelper<'a> {
                 if let Some(g) = args {
                     s.push_str(&self.generics_arg_to_string(g));
                 }
+
+                s.push_str(&param_names.iter().map(|a| format!("{:?}",a)).collect::<Vec<_>>().join("    ,   "));
                 s
             }
             Type::Generic(g) => format!("{}", g),
