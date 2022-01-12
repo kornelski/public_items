@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use rustdoc_types::{
     Crate, GenericArg, GenericArgs, Generics, Id, Impl, Item, ItemEnum, Type, Visibility,
 };
+use serde_json::map::IntoIter;
 
 use crate::Result;
 
@@ -200,7 +201,13 @@ impl<'a> RustdocJsonHelper<'a> {
                     s.push_str(&self.generics_arg_to_string(g));
                 }
 
-                s.push_str(&param_names.iter().map(|a| format!("{:?}",a)).collect::<Vec<_>>().join("    ,   "));
+                s.push_str(
+                    &param_names
+                        .iter()
+                        .map(|a| format!("{:?}", a))
+                        .collect::<Vec<_>>()
+                        .join("    ,   "),
+                );
                 s
             }
             Type::Generic(g) => format!("{}", g),
@@ -352,5 +359,57 @@ fn get_effective_name(item: &Item) -> &str {
         ) => name.as_ref(),
 
         _ => item.name.as_deref().unwrap_or("<<no_name>>"),
+    }
+}
+
+fn print_if_present<T>(
+    left: &str,
+    v: impl std::iter::IntoIterator<Item = T>,
+    sep: &str,
+    right: &str,
+) -> String
+where
+    T: ToString,
+{
+    let mut s = String::new();
+
+    let mut i = v.into_iter().peekable();
+
+    if let Some(_) = i.peek() {
+        s.push_str(left);
+
+        s.push_str(&i.map(|f| f.to_string2()).collect::<Vec<_>>().join(sep));
+
+        s.push_str(right);
+    }
+
+    s
+}
+
+struct Display {}
+
+impl std::fmt::Display for Display {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "hej")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_print_if_present() {
+        assert_eq!("<T, U>", print_if_present("<", vec!["T", "U"], ", ", ">"));
+    }
+}
+
+trait ToString {
+    fn to_string2(&self) -> String;
+}
+
+impl ToString for &str {
+    fn to_string2(&self) -> String {
+        self.to_string()
     }
 }
