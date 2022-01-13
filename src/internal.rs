@@ -299,7 +299,7 @@ impl<'a> RustdocJsonHelper<'a> {
                 s
             }
             GenericArgs::Parenthesized { inputs, output } => {
-                print_if_present(self, "", inputs, ", ", "")
+                print_if_present(self, "", inputs, ", ", "") + "-> " + &format!("{:?}", output)
             }
         }
     }
