@@ -299,7 +299,7 @@ impl<'a> RustdocJsonHelper<'a> {
                 s
             }
             GenericArgs::Parenthesized { inputs, output } => {
-                print_if_present(self, "", inputs, ", ", "") + "-> " + &format!("{:?}", output)
+                print_if_present(self, "(", inputs, ", ", ")", true) + "-> " + &format!("{:?}", output)
             }
         }
     }
@@ -377,6 +377,7 @@ fn print_if_present<T, C>(
     v: impl std::iter::IntoIterator<Item = T>,
     sep: &str,
     right: &str,
+    always_show: bool,
 ) -> String
 where
     T: ToString2<C>,
@@ -385,11 +386,24 @@ where
 
     let mut i = v.into_iter().peekable();
 
-    if let Some(_) = i.peek() {
+    if always_show {
         s.push_str(left);
+    }
 
+    if let Some(_) = i.peek() {
+
+        if !always_show {
+            s.push_str(left);
+        }
+    
         s.push_str(&i.map(|f| f.to_string2(&context)).collect::<Vec<_>>().join(sep));
 
+        if !always_show {
+            s.push_str(right);
+        }
+    }
+
+    if always_show {
         s.push_str(right);
     }
 
@@ -409,16 +423,17 @@ mod tests {
     #[test]
     fn test_print_if_present() {
         let mut v = vec!["T", "U", "Y"];
-        assert_eq!("<T, U, Y>", print_if_present((), "<", &v, ", ", ">"));
+        assert_eq!("<T, U, Y>", print_if_present((), "<", &v, ", ", ">", false));
 
         v.pop();
-        assert_eq!("<T, U>", print_if_present((), "<", &v, ", ", ">"));
+        assert_eq!("<T, U>", print_if_present((), "<", &v, ", ", ">", false));
 
         v.pop();
-        assert_eq!("<T>", print_if_present((), "<", &v, ", ", ">"));
+        assert_eq!("<T>", print_if_present((), "<", &v, ", ", ">", true));
 
         v.clear();
-        assert_eq!("", print_if_present((), "<", &v, ", ", ">"));
+        assert_eq!("", print_if_present((), "<", &v, ", ", ">", false));
+        assert_eq!("<>", print_if_present((), "<", &v, ", ", ">", true));
     }
 
     // For tests
