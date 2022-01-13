@@ -400,16 +400,20 @@ mod tests {
 
     #[test]
     fn test_print_if_present() {
-        assert_eq!("<T, U>", print_if_present("<", vec!["T", "U"], ", ", ">"));
+        let mut v = vec!["T", "U"];
+        assert_eq!("<T, U>", print_if_present("<", &v, ", ", ">"));
+        v.clear();
+        assert_eq!("", print_if_present("<", &v, ", ", ">"));
+    }
+
+    // For tests
+    impl ToString for &&str {
+        fn to_string2(&self) -> String {
+            self.to_string()
+        }
     }
 }
 
 trait ToString {
     fn to_string2(&self) -> String;
-}
-
-impl ToString for &str {
-    fn to_string2(&self) -> String {
-        self.to_string()
-    }
 }
