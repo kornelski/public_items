@@ -163,7 +163,7 @@ impl<'a> RustdocJsonHelper<'a> {
             ItemEnum::Trait(t) => self.generics_to_string(&t.generics),
             ItemEnum::Method(m) => self.fn_decl_to_string(&m.decl),
             ItemEnum::Typedef(_) => String::from("= ..."),
-            ItemEnum::Constant(_) => String::from("= ..."),
+            ItemEnum::Constant(c) => format!(": {} = {}", &self.type_to_string(&c.type_), &c.expr),
             ItemEnum::Static(_) => String::from("= ..."),
             ItemEnum::PrimitiveType(name) => name.clone(),
             _ => String::from(""),
@@ -313,7 +313,7 @@ impl<'a> RustdocJsonHelper<'a> {
 
 impl<'a> ToString2<&RustdocJsonHelper<'a>> for &Type {
     fn to_string2(&self, context: &&RustdocJsonHelper<'a>) -> String {
-        todo!()
+        context.type_to_string(self)
     }
 }
 
