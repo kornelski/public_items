@@ -299,7 +299,7 @@ impl<'a> RustdocJsonHelper<'a> {
                 s
             }
             GenericArgs::Parenthesized { inputs, output } => {
-                print_if_present(&self, "", inputs, ", ", "")
+                print_if_present(self, "", inputs, ", ", "")
             }
         }
     }
@@ -315,8 +315,8 @@ impl<'a> RustdocJsonHelper<'a> {
     }
 }
 
-impl<'a> ToString2<RustdocJsonHelper<'a>> for &Type {
-    fn to_string2(&self, context: &RustdocJsonHelper<'a>) -> String {
+impl<'a> ToString2<&RustdocJsonHelper<'a>> for &Type {
+    fn to_string2(&self, context: &&RustdocJsonHelper<'a>) -> String {
         todo!()
     }
 }
