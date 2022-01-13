@@ -278,11 +278,7 @@ impl<'a> RustdocJsonHelper<'a> {
     }
 
     fn to_str_tuple(&self, types: &[Type]) -> String {
-        let mut s = String::from("(");
-        let type_strings: Vec<String> = types.iter().map(|i| self.type_to_string(i)).collect();
-        type_strings.join(",");
-        s.push_str(")");
-        s
+        print_if_present(self, "(", types, ",", ")", true)
     }
 
     fn generic_args_to_string(&self, generics: &GenericArgs) -> String {
