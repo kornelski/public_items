@@ -198,7 +198,7 @@ impl<'a> RustdocJsonHelper<'a> {
             } => {
                 let mut s = String::from(name);
                 if let Some(g) = args {
-                    s.push_str(&self.generics_arg_to_string(g));
+                    s.push_str(&self.generic_args_to_string(g));
                 }
 
                 s.push_str(
@@ -285,7 +285,7 @@ impl<'a> RustdocJsonHelper<'a> {
         s
     }
 
-    fn generics_arg_to_string(&self, generics: &GenericArgs) -> String {
+    fn generic_args_to_string(&self, generics: &GenericArgs) -> String {
         match generics {
             GenericArgs::AngleBracketed { args, bindings } => {
                 let mut s = String::new();
@@ -303,6 +303,8 @@ impl<'a> RustdocJsonHelper<'a> {
             }
         }
     }
+
+    
 
     fn generic_arg_to_string(&self, generic_arg: &GenericArg) -> String {
         match generic_arg {
@@ -386,22 +388,26 @@ where
     s
 }
 
-struct Display {}
-
-impl std::fmt::Display for Display {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "hej")
+impl ToString for GenericArg {
+    fn to_string2(&self) -> String {
+        todo!()
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_print_if_present() {
-        let mut v = vec!["T", "U"];
+        let mut v = vec!["T", "U", "Y"];
+        assert_eq!("<T, U, Y>", print_if_present("<", &v, ", ", ">"));
+
+        v.pop();
         assert_eq!("<T, U>", print_if_present("<", &v, ", ", ">"));
+
+        v.pop();
+        assert_eq!("<T>", print_if_present("<", &v, ", ", ">"));
+
         v.clear();
         assert_eq!("", print_if_present("<", &v, ", ", ">"));
     }
