@@ -299,7 +299,7 @@ impl<'a> RustdocJsonHelper<'a> {
                 s
             }
             GenericArgs::Parenthesized { inputs, output } => {
-                print_if_present(self, "", inputs, ", ", "")
+                print_if_present(&self, "", inputs, ", ", "")
             }
         }
     }
@@ -315,7 +315,7 @@ impl<'a> RustdocJsonHelper<'a> {
     }
 }
 
-impl<'a> ToString2<&RustdocJsonHelper<'a>> for Type {
+impl<'a> ToString2<RustdocJsonHelper<'a>> for &Type {
     fn to_string2(&self, context: &RustdocJsonHelper<'a>) -> String {
         todo!()
     }
@@ -388,7 +388,7 @@ where
     if let Some(_) = i.peek() {
         s.push_str(left);
 
-        s.push_str(&i.map(|f| f.to_string2(context)).collect::<Vec<_>>().join(sep));
+        s.push_str(&i.map(|f| f.to_string2(&context)).collect::<Vec<_>>().join(sep));
 
         s.push_str(right);
     }
@@ -397,7 +397,7 @@ where
 }
 
 impl<'a> ToString2<RustdocJsonHelper<'a>> for GenericArg {
-    fn to_string2(&self, context: RustdocJsonHelper<'a>) -> String {
+    fn to_string2(&self, context: &RustdocJsonHelper<'a>) -> String {
         format!("asdf")
     }
 }
@@ -423,12 +423,12 @@ mod tests {
 
     // For tests
     impl ToString2<()> for &&str {
-        fn to_string2(&self, context: ()) -> String {
+        fn to_string2(&self, context: &()) -> String {
             self.to_string()
         }
     }
 }
 
 trait ToString2<C> {
-    fn to_string2(&self, context: C) -> String;
+    fn to_string2(&self, context: &C) -> String;
 }
