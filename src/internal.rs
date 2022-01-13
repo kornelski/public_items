@@ -299,12 +299,12 @@ impl<'a> RustdocJsonHelper<'a> {
                 s
             }
             GenericArgs::Parenthesized { inputs, output } => {
+                print_if_present(self, "", inputs, ", ", "");
                 format!("GenericArgs::Parenthesized")
             }
         }
     }
 
-    
 
     fn generic_arg_to_string(&self, generic_arg: &GenericArg) -> String {
         match generic_arg {
@@ -319,6 +319,8 @@ impl<'a> RustdocJsonHelper<'a> {
 fn generic_to_string(generic_param_def: &rustdoc_types::GenericParamDef) -> String {
     format!("{}", generic_param_def.name)
 }
+
+
 
 fn get_effective_id(item: &Item) -> &Id {
     match &item.inner {
@@ -364,14 +366,15 @@ fn get_effective_name(item: &Item) -> &str {
     }
 }
 
-fn print_if_present<T>(
+fn print_if_present<T, C>(
+    context: Option<C>,
     left: &str,
     v: impl std::iter::IntoIterator<Item = T>,
     sep: &str,
     right: &str,
 ) -> String
 where
-    T: ToString,
+    T: ToString<C>,
 {
     let mut s = String::new();
 
@@ -380,7 +383,7 @@ where
     if let Some(_) = i.peek() {
         s.push_str(left);
 
-        s.push_str(&i.map(|f| f.to_string2()).collect::<Vec<_>>().join(sep));
+        s.push_str(&i.map(|f| f.to_string2(context.as_ref())).collect::<Vec<_>>().join(sep));
 
         s.push_str(right);
     }
@@ -388,8 +391,10 @@ where
     s
 }
 
-impl ToString for GenericArg {
-    fn to_string2(&self) -> String {
+
+
+impl<T> ToString<T> for GenericArg {
+    fn to_string2(&self, context: Option<&T>) -> String {
         todo!()
     }
 }
@@ -400,26 +405,26 @@ mod tests {
     #[test]
     fn test_print_if_present() {
         let mut v = vec!["T", "U", "Y"];
-        assert_eq!("<T, U, Y>", print_if_present("<", &v, ", ", ">"));
+        assert_eq!("<T, U, Y>", print_if_present(None, "<", &v, ", ", ">"));
 
         v.pop();
-        assert_eq!("<T, U>", print_if_present("<", &v, ", ", ">"));
+        assert_eq!("<T, U>", print_if_present(None, "<", &v, ", ", ">"));
 
         v.pop();
-        assert_eq!("<T>", print_if_present("<", &v, ", ", ">"));
+        assert_eq!("<T>", print_if_present(None, "<", &v, ", ", ">"));
 
         v.clear();
-        assert_eq!("", print_if_present("<", &v, ", ", ">"));
+        assert_eq!("", print_if_present(None, "<", &v, ", ", ">"));
     }
 
     // For tests
-    impl ToString for &&str {
-        fn to_string2(&self) -> String {
+    impl ToString<()> for &&str {
+        fn to_string2(&self, context: Option<&()>) -> String {
             self.to_string()
         }
     }
 }
 
-trait ToString {
-    fn to_string2(&self) -> String;
+trait ToString<T> {
+    fn to_string2(&self, context: Option<&T>) -> String;
 }
