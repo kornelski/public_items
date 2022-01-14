@@ -1,9 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use std::{collections::{HashMap, HashSet}, fmt::Display};
 
 use rustdoc_types::{
     Crate, GenericArg, GenericArgs, Generics, Id, Impl, Item, ItemEnum, Type, Visibility,
 };
-use serde_json::map::IntoIter;
 
 use crate::Result;
 
@@ -159,9 +158,9 @@ impl<'a> RustdocJsonHelper<'a> {
             ItemEnum::Struct(s) => self.generics_to_string(&s.generics),
             ItemEnum::StructField(ty) => format!(": {}", self.type_to_string(ty)),
             ItemEnum::Variant(_) => String::from(": ..."),
-            ItemEnum::Function(f) => self.fn_decl_to_string(&f.decl),
+            ItemEnum::Function(f) => self.fn_decl_to_string(&f.decl, &f.generics),
             ItemEnum::Trait(t) => self.generics_to_string(&t.generics),
-            ItemEnum::Method(m) => self.fn_decl_to_string(&m.decl),
+            ItemEnum::Method(m) => self.fn_decl_to_string(&m.decl, &m.generics),
             ItemEnum::Typedef(_) => String::from("= ..."),
             ItemEnum::Constant(c) => format!(": {} = {}", &self.type_to_string(&c.type_), &c.expr),
             ItemEnum::Static(_) => String::from("= ..."),
@@ -171,8 +170,9 @@ impl<'a> RustdocJsonHelper<'a> {
         .to_owned()
     }
 
-    fn fn_decl_to_string(&self, decl: &rustdoc_types::FnDecl) -> String {
-        let mut s = print_if_present(self, "(", &decl.inputs, ", ", ")", true);
+    fn fn_decl_to_string(&self, decl: &rustdoc_types::FnDecl, generics: &Generics) -> String {
+        let mut s = self.generics_to_string(generics)
+            + &print_if_present(self, "(", &decl.inputs, ", ", ")", true);
         s.push_str(&match &decl.output {
             Some(foo) => format!(" -> {}", self.type_to_string(&foo)),
             None => "".to_owned(),
@@ -244,7 +244,7 @@ impl<'a> RustdocJsonHelper<'a> {
                 at_least_one_generic_param_added = true;
                 s.push_str("<");
             } else {
-                s.push_str(",");
+                s.push_str(", ");
             }
             s.push_str(&generic_to_string(generic_param_def));
         }
@@ -287,11 +287,12 @@ impl<'a> RustdocJsonHelper<'a> {
                 s
             }
             GenericArgs::Parenthesized { inputs, output } => {
-                print_if_present(self, "(", inputs, ", ", ")", true) + "-> " + &format!("{:?}", output)
+                print_if_present(self, "(", inputs, ", ", ")", true)
+                    + "-> "
+                    + &format!("{:?}", output)
             }
         }
     }
-
 
     fn generic_arg_to_string(&self, generic_arg: &GenericArg) -> String {
         match generic_arg {
@@ -316,12 +317,9 @@ impl<'a> ToString2<&RustdocJsonHelper<'a>> for &(std::string::String, rustdoc_ty
 }
 //impl `: ToString2<&RustdocJsonHelper<'_>>` is not satisfied
 
-
 fn generic_to_string(generic_param_def: &rustdoc_types::GenericParamDef) -> String {
     format!("{}", generic_param_def.name)
 }
-
-
 
 fn get_effective_id(item: &Item) -> &Id {
     match &item.inner {
@@ -387,12 +385,15 @@ where
     }
 
     if let Some(_) = i.peek() {
-
         if !always_show {
             s.push_str(left);
         }
-    
-        s.push_str(&i.map(|f| f.to_string2(&context)).collect::<Vec<_>>().join(sep));
+
+        s.push_str(
+            &i.map(|f| f.to_string2(&context))
+                .collect::<Vec<_>>()
+                .join(sep),
+        );
 
         if !always_show {
             s.push_str(right);
@@ -443,3 +444,9 @@ mod tests {
 trait ToString2<C> {
     fn to_string2(&self, context: &C) -> String;
 }
+
+// impl<C> Display for ToString2<C> {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, self.to_string2()
+//     }
+// }
