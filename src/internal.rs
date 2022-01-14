@@ -172,17 +172,9 @@ impl<'a> RustdocJsonHelper<'a> {
     }
 
     fn fn_decl_to_string(&self, decl: &rustdoc_types::FnDecl) -> String {
-        let mut s = String::from("(");
-        let a: Vec<String> = decl
-            .inputs
-            .iter()
-            .map(|i| &i.1)
-            .map(|t| self.type_to_string(&t))
-            .collect();
-        s.push_str(&a.join(", "));
-        s.push_str(") -> ");
+        let mut s = print_if_present(self, "(", &decl.inputs, ", ", ")", true);
         s.push_str(&match &decl.output {
-            Some(foo) => self.type_to_string(&foo),
+            Some(foo) => format!(" -> {}", self.type_to_string(&foo)),
             None => "".to_owned(),
         });
         s
@@ -316,6 +308,14 @@ impl<'a> ToString2<&RustdocJsonHelper<'a>> for &Type {
         context.type_to_string(self)
     }
 }
+
+impl<'a> ToString2<&RustdocJsonHelper<'a>> for &(std::string::String, rustdoc_types::Type) {
+    fn to_string2(&self, context: &&RustdocJsonHelper<'a>) -> String {
+        format!("{}: {}", self.0, context.type_to_string(&self.1))
+    }
+}
+//impl `: ToString2<&RustdocJsonHelper<'_>>` is not satisfied
+
 
 fn generic_to_string(generic_param_def: &rustdoc_types::GenericParamDef) -> String {
     format!("{}", generic_param_def.name)
