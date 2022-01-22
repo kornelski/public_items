@@ -88,7 +88,8 @@ impl Display for DisplayedItem<'_> {
             .map(|i| get_effective_name(i))
             .collect::<Vec<_>>();
 
-        write!(f, "{}", path.join("::"))
+        let type_ = item_utils::type_string_for_item(item);
+        write!(f, "pub {} {}", type_, path.join("::"))
     }
 }
 
