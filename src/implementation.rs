@@ -4,6 +4,7 @@ use crate::Result;
 use builder::PublicItemBuilder;
 
 mod builder;
+mod item_utils;
 
 /// Takes rustdoc JSON and returns a [`Vec`] of [`String`]s where each
 /// [`String`] is one public item of the crate, i.e. part of the crate's public

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use rustdoc_types::{Crate, FnDecl, Id, Impl, Item, ItemEnum, Type};
 
-mod item_utils;
+use super::item_utils;
 
 /// Internal helper to keep track of state while analyzing the JSON
 #[allow(clippy::module_name_repetitions)]
