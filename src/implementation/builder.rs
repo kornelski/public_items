@@ -1,6 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
-use rustdoc_types::{Crate, FnDecl, Id, Impl, Item, ItemEnum, Type};
+use rustdoc_types::{
+    Crate, FnDecl, GenericArg, GenericArgs, Generics, Id, Impl, Item, ItemEnum, Type, GenericParamDef, GenericParamDefKind,
+};
 
 use super::item_utils;
 
@@ -27,18 +29,19 @@ impl<'a> PublicItemBuilder<'a> {
             .map(|i| get_effective_name(i))
             .collect::<Vec<_>>();
 
-        // Inform users about buggy enum variant tuple struct fields if applicable
-        let mut suffix = Self::suffix_for_item(item);
-        if path.len() == 1 && matches!(item.inner, ItemEnum::StructField(_)) {
-            suffix += " (path missing due to https://github.com/rust-lang/rust/issues/92945)";
-        }
-
-        format!(
+        let mut result = format!(
             "{}{}{}",
             Self::prefix_for_item(item),
             path.join("::"),
-            suffix,
-        )
+            ItemSuffix(item),
+        );
+
+        // Inform users about buggy enum variant tuple struct fields if applicable
+        if path.len() == 1 && matches!(item.inner, ItemEnum::StructField(_)) {
+            result += " (path missing due to https://github.com/rust-lang/rust/issues/92945)";
+        }
+
+        result
     }
 
     fn container_for_item(&self, item: &Item) -> Option<&Item> {
@@ -48,27 +51,6 @@ impl<'a> PublicItemBuilder<'a> {
 
     fn prefix_for_item(item: &Item) -> String {
         format!("pub {} ", item_utils::type_string_for_item(item))
-    }
-
-    fn suffix_for_item(item: &Item) -> String {
-        match &item.inner {
-            ItemEnum::Function(f) => Self::fn_decl_to_string(&f.decl),
-            ItemEnum::Method(m) => Self::fn_decl_to_string(&m.decl),
-            ItemEnum::Macro(_) | ItemEnum::ProcMacro(_) => String::from("!"),
-            _ => String::default(),
-        }
-    }
-
-    fn fn_decl_to_string(fn_decl: &FnDecl) -> String {
-        format!(
-            "({})",
-            fn_decl
-                .inputs
-                .iter()
-                .map(|i| i.0.clone())
-                .collect::<Vec<_>>()
-                .join(", ")
-        )
     }
 
     fn path_for_item(&'a self, item: &'a Item) -> Vec<&'a Item> {
@@ -112,5 +94,205 @@ fn get_effective_name(item: &Item) -> &str {
         ) => name.as_ref(),
 
         _ => item.name.as_deref().unwrap_or("<<no_name>>"),
+    }
+}
+
+struct FnDeclaration<'a>(&'a FnDecl);
+impl Display for FnDeclaration<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "({})",
+            self.0
+                .inputs
+                .iter()
+                .map(|i| format!("{}: {}", i.0, D(&i.1)))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )?;
+        if let Some(output) = &self.0.output {
+            write!(f, " -> {}", D(output))?;
+        }
+
+        Ok(())
+    }
+}
+
+struct ItemSuffix<'a>(&'a Item);
+impl Display for ItemSuffix<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.0.inner {
+            _ => Ok(()),
+            ItemEnum::Module(_) => Ok(()),
+            ItemEnum::ExternCrate { name, rename } => todo!(),
+            ItemEnum::Import(_) => todo!(),
+            ItemEnum::Union(_) => todo!(),
+            ItemEnum::Struct(s) => todo!(),
+            ItemEnum::StructField(type_) => write!(f, ": {}", D(type_)),
+            ItemEnum::Enum(e) => write!(f, ": {}", D(e)),
+            ItemEnum::Variant(_) => todo!(),
+            ItemEnum::Function(fn_) => write!(f, "{}", FnDeclaration(&fn_.decl)),
+            ItemEnum::Trait(_) => todo!(),
+            ItemEnum::TraitAlias(_) => todo!(),
+            ItemEnum::Method(m) => write!(f, "{}", FnDeclaration(&m.decl)),
+            ItemEnum::Impl(_) => todo!(),
+            ItemEnum::Typedef(_) => todo!(),
+            ItemEnum::OpaqueTy(_) => todo!(),
+            ItemEnum::Constant(_) => todo!(),
+            ItemEnum::Static(_) => todo!(),
+            ItemEnum::ForeignType => todo!(),
+            ItemEnum::Macro(_) | ItemEnum::ProcMacro(_) => write!(f, "{}", "!"),
+            ItemEnum::PrimitiveType(_) => todo!(),
+            ItemEnum::AssocConst { type_, default } => todo!(),
+            ItemEnum::AssocType { bounds, default } => todo!(),
+        }
+    }
+}
+
+impl Display for D<&Generics> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if !self.0.params.is_empty() {
+            write!(f, "<{}>", Joiner(&self.0.params, ", ", |f| D(f)))?;
+        }
+        if !self.0.params.is_empty() {
+            write!(f, " where {}", Joiner(&self.0.where_predicates, ", ", |f| D(f)))?;
+        }
+
+        Ok(())
+    }
+}
+
+impl Display for D<&GenericParamDef> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}{}", self.0.name, D(self.0.kind))
+    }
+}
+
+impl Display for D<&GenericParamDefKind> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.0 {
+            
+        }
+        write!(f, "{}{}", self.0.))
+    }
+}
+
+struct Joiner<'a, T, D: Display>(&'a Vec<T>, &'static str, fn(&'a T) -> D);
+impl<'a, T, D: Display> Display for Joiner<'a, T, D> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.0
+                .iter()
+                .map(|t| format!("{}", self.2(t)))
+                .collect::<Vec<_>>()
+                .join(self.1)
+        )
+    }
+}
+
+impl Display for D<&GenericArgs> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.0 {
+            GenericArgs::AngleBracketed { args, bindings } => {
+                if !args.is_empty() {
+                    write!(f, "<{}>", Joiner(args, ", ", |t| D(t)))?;
+                }
+            }
+            GenericArgs::Parenthesized { inputs, output } => {
+                if !inputs.is_empty() {
+                    write!(f, "Fn<{}>", Joiner(inputs, ", ", |t| D(t)))?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
+struct D<T>(T);
+
+impl Display for D<&GenericArg> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.0 {
+            GenericArg::Lifetime(l) => write!(f, "{}", l),
+            GenericArg::Type(t) => write!(f, "{}", D(t)),
+            GenericArg::Const(_) => todo!(),
+            GenericArg::Infer => todo!(),
+        }
+    }
+}
+
+impl Display for D<&Type> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.0 {
+            Type::ResolvedPath {
+                name,
+                args,
+                param_names,
+                ..
+            } => {
+                write!(f, "{}", name)?;
+                if let Some(args) = args {
+                    write!(f, "{}", D(args.as_ref()))?;
+                }
+
+                Ok(())
+            }
+            Type::Generic(s) => write!(f, "{}", s),
+            Type::Primitive(p) => write!(f, "{}", p),
+            Type::FunctionPointer(_) => todo!(),
+            Type::Tuple(types_) => {
+                write!(f, "({})", Joiner(types_, ",", |t| D(t)))
+            }
+            Type::Slice(t) => write!(f, "[{}]", D(t.as_ref())),
+            Type::Array { type_, len } => todo!(), //write!("{}"),
+            Type::ImplTrait(_) => todo!(),
+            Type::Infer => todo!(),
+            Type::RawPointer { mutable, type_ } => todo!(),
+            Type::BorrowedRef {
+                lifetime,
+                mutable,
+                type_,
+            } => {
+                write!(
+                    f,
+                    "&{}{}{}",
+                    Lifetime(lifetime),
+                    Mutable(*mutable),
+                    D(type_.as_ref()),
+                )
+            }
+            Type::QualifiedPath {
+                name,
+                self_type,
+                trait_,
+            } => write!(
+                f,
+                "<{} as {}>::{}",
+                D(self_type.as_ref()),
+                D(trait_.as_ref()),
+                name
+            ),
+        }
+    }
+}
+
+struct Mutable(bool);
+impl Display for Mutable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", if self.0 { "mut " } else { "" })
+    }
+}
+
+struct Lifetime<'a>(&'a Option<String>);
+impl Display for Lifetime<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(lifetime) = self.0 {
+            write!(f, "'{} ", lifetime)
+        } else {
+            Ok(())
+        }
     }
 }
