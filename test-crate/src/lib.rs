@@ -1,8 +1,3 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
+pub struct WithGenericArgs<'a, 'b: 'a, U, T = usize> {
+    pub field: (&'a String, &'b usize, T, U),
 }

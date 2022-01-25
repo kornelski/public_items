@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt::Display};
 
 use rustdoc_types::{
-    Crate, FnDecl, GenericArg, GenericArgs, Generics, Id, Impl, Item, ItemEnum, Type, GenericParamDef, GenericParamDefKind,
+    Crate, FnDecl, GenericArg, GenericArgs, Generics, Id, Impl, Item, ItemEnum, Type, GenericParamDef, GenericParamDefKind, GenericBound, WherePredicate,
 };
 
 use super::item_utils;
@@ -164,18 +164,42 @@ impl Display for D<&Generics> {
 
 impl Display for D<&GenericParamDef> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}{}", self.0.name, D(self.0.kind))
+        write!(f, "{}{}", self.0.name, D(&self.0.kind))
+    }
+}
+
+impl Display for D<&WherePredicate> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
     }
 }
 
 impl Display for D<&GenericParamDefKind> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.0 {
-            
+            GenericParamDefKind::Lifetime { outlives } => {
+                if !outlives.is_empty() {
+                    write!(f, ": {}", outlives.join(", "))?;
+                }
+            },
+            GenericParamDefKind::Type { bounds, default } => {
+                if !bounds.is_empty() {
+                    write!(f, ": {}", Joiner(bounds, ", ", |f|D(f)))?;
+                }
+            },
+            GenericParamDefKind::Const { ty, default } => todo!(),
         }
-        write!(f, "{}{}", self.0.))
+
+        Ok(())
     }
 }
+
+impl Display for D<&GenericBound> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
 
 struct Joiner<'a, T, D: Display>(&'a Vec<T>, &'static str, fn(&'a T) -> D);
 impl<'a, T, D: Display> Display for Joiner<'a, T, D> {

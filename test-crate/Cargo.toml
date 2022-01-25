@@ -1,8 +1,5 @@
 [package]
-name = "foo"
-version = "0.1.0"
+description = "Contains various items that public_items can be tested on."
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+name = "test-crate"
+version = "0.1.0"
