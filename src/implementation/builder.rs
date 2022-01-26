@@ -123,9 +123,8 @@ struct ItemSuffix<'a>(&'a Item);
 impl Display for ItemSuffix<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.0.inner {
-            ItemEnum::Module(_) => Ok(()),
+            ItemEnum::Module(_) | ItemEnum::Import(_)=> Ok(()),
             ItemEnum::ExternCrate { name, rename } => todo!(),
-            ItemEnum::Import(_) => todo!(),
             ItemEnum::Union(_) => todo!(),
             ItemEnum::Struct(s) => write!(f, "{}", D(&s.generics)),
             ItemEnum::StructField(type_) => write!(f, ": {}", D(type_)),
@@ -138,12 +137,12 @@ impl Display for ItemSuffix<'_> {
             ItemEnum::Impl(_) => todo!(),
             ItemEnum::Typedef(t) => write!(f, "{}", D(&t.generics)),
             ItemEnum::OpaqueTy(_) => todo!(),
-            ItemEnum::Constant(_) => todo!(),
+            ItemEnum::Constant(c) => write!(f, ": {}", D(&c.type_)),
             ItemEnum::Static(_) => todo!(),
             ItemEnum::ForeignType => todo!(),
             ItemEnum::Macro(_) | ItemEnum::ProcMacro(_) => write!(f, "{}", "!"),
             ItemEnum::PrimitiveType(_) => todo!(),
-            ItemEnum::AssocConst { type_, default } => todo!(),
+            ItemEnum::AssocConst { type_, default } => write!(f, ": {}", D(type_)),
             ItemEnum::AssocType { bounds, default } => todo!(),
         }
     }
@@ -171,7 +170,7 @@ impl Display for D<&Variant> {
         match self.0 {
             Variant::Plain => Ok(()),
             Variant::Tuple(types) => write!(f, "({})", Joiner(&types, ",", |f| D(f))),
-            Variant::Struct(s) => todo!(),
+            Variant::Struct(_) => Ok(()), // Each struct field is printed individually
         }
     }
 }
