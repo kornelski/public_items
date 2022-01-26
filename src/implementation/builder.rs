@@ -1,7 +1,8 @@
 use std::{collections::HashMap, fmt::Display};
 
 use rustdoc_types::{
-    Crate, FnDecl, GenericArg, GenericArgs, Generics, Id, Impl, Item, ItemEnum, Type, GenericParamDef, GenericParamDefKind, GenericBound, WherePredicate, Variant,
+    Crate, FnDecl, GenericArg, GenericArgs, GenericBound, GenericParamDef, GenericParamDefKind,
+    Generics, Id, Impl, Item, ItemEnum, Type, Variant, WherePredicate,
 };
 
 use super::item_utils;
@@ -154,7 +155,11 @@ impl Display for D<&Generics> {
             write!(f, "<{}>", Joiner(&self.0.params, ", ", |f| D(f)))?;
         }
         if !self.0.params.is_empty() {
-            write!(f, " where {}", Joiner(&self.0.where_predicates, ", ", |f| D(f)))?;
+            write!(
+                f,
+                " where {}",
+                Joiner(&self.0.where_predicates, ", ", |f| D(f))
+            )?;
         }
 
         Ok(())
@@ -165,16 +170,24 @@ impl Display for D<&Variant> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.0 {
             Variant::Plain => Ok(()),
-            Variant::Tuple(types) => write!(f, "({})", Joiner(&types, ",", |f|D(f))),
+            Variant::Tuple(types) => write!(f, "({})", Joiner(&types, ",", |f| D(f))),
             Variant::Struct(s) => todo!(),
         }
     }
 }
-// macro_rules!  {
-//     () => {
-        
+
+// macro_rules! def {
+//     ($t:ty, $bl:block) => {
+//         impl Display for D<&$t> {
+//             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+//                 $bl
+//         }
 //     };
 // }
+
+// def!(GenericParamDef, {
+//     write!(f, "{}{}", self.0.name, D(&self.0.kind))
+// });
 
 impl Display for D<&GenericParamDef> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -195,12 +208,12 @@ impl Display for D<&GenericParamDefKind> {
                 if !outlives.is_empty() {
                     write!(f, ": {}", outlives.join(", "))?;
                 }
-            },
+            }
             GenericParamDefKind::Type { bounds, default } => {
                 if !bounds.is_empty() {
-                    write!(f, ": {}", Joiner(bounds, ", ", |f|D(f)))?;
+                    write!(f, ": {}", Joiner(bounds, ", ", |f| D(f)))?;
                 }
-            },
+            }
             GenericParamDefKind::Const { ty, default } => todo!(),
         }
 
@@ -213,7 +226,6 @@ impl Display for D<&GenericBound> {
         todo!()
     }
 }
-
 
 struct Joiner<'a, T, D: Display>(&'a Vec<T>, &'static str, fn(&'a T) -> D);
 impl<'a, T, D: Display> Display for Joiner<'a, T, D> {
