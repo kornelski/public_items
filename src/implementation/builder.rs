@@ -136,7 +136,7 @@ impl Display for ItemSuffix<'_> {
             ItemEnum::TraitAlias(_) => todo!(),
             ItemEnum::Method(m) => write!(f, "{}", FnDeclaration(&m.decl)),
             ItemEnum::Impl(_) => todo!(),
-            ItemEnum::Typedef(t) => write!(f, "{:?}", t),
+            ItemEnum::Typedef(t) => write!(f, "{}", D(&t.generics)),
             ItemEnum::OpaqueTy(_) => todo!(),
             ItemEnum::Constant(_) => todo!(),
             ItemEnum::Static(_) => todo!(),
