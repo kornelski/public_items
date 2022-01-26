@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt::Display};
 
 use rustdoc_types::{
-    Crate, FnDecl, GenericArg, GenericArgs, Generics, Id, Impl, Item, ItemEnum, Type, GenericParamDef, GenericParamDefKind, GenericBound, WherePredicate,
+    Crate, FnDecl, GenericArg, GenericArgs, Generics, Id, Impl, Item, ItemEnum, Type, GenericParamDef, GenericParamDefKind, GenericBound, WherePredicate, Variant,
 };
 
 use super::item_utils;
@@ -129,7 +129,7 @@ impl Display for ItemSuffix<'_> {
             ItemEnum::Struct(s) => write!(f, "{}", D(&s.generics)),
             ItemEnum::StructField(type_) => write!(f, ": {}", D(type_)),
             ItemEnum::Enum(e) => write!(f, "{}", D(&e.generics)),
-            ItemEnum::Variant(v) => write!(f, ": {:?}", v),
+            ItemEnum::Variant(v) => write!(f, "{}", D(v)),
             ItemEnum::Function(fn_) => write!(f, "{}", FnDeclaration(&fn_.decl)),
             ItemEnum::Trait(_) => todo!(),
             ItemEnum::TraitAlias(_) => todo!(),
@@ -158,6 +158,16 @@ impl Display for D<&Generics> {
         }
 
         Ok(())
+    }
+}
+
+impl Display for D<&Variant> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.0 {
+            Variant::Plain => Ok(()),
+            Variant::Tuple(types) => write!(f, "({})", Joiner(&types, ",", |f|D(f))),
+            Variant::Struct(s) => todo!(),
+        }
     }
 }
 // macro_rules!  {
