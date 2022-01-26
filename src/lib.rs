@@ -1,10 +1,14 @@
 use rustdoc_types::{Crate, Item, ItemEnum};
 
-mod error;
-pub use error::Error;
-pub use error::Result;
 
+mod error;
 mod public_item_builder;
+
+/// The crate error type.
+pub use error::Error;
+
+/// The crate result type.
+pub use error::Result;
 
 /// Takes rustdoc JSON and returns a [`Vec`] of [`String`]s where each
 /// [`String`] is one public item of the crate, i.e. part of the crate's public
@@ -42,7 +46,7 @@ pub fn sorted_public_items_from_rustdoc_json_str(rustdoc_json_str: &str) -> Resu
     Ok(result)
 }
 
-/// Check if an item is relevant to include in the output.
+/// Private helper to check if an item is relevant to include in the output.
 ///
 /// * Only the items in the root crate (the "current" crate) are relevant.
 ///
