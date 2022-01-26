@@ -154,7 +154,7 @@ impl Display for D<&Generics> {
         if !self.0.params.is_empty() {
             write!(f, "<{}>", Joiner(&self.0.params, ", ", |f| D(f)))?;
         }
-        if !self.0.params.is_empty() {
+        if !self.0.where_predicates.is_empty() {
             write!(
                 f,
                 " where {}",
