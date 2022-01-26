@@ -5,10 +5,8 @@ use rustdoc_types::{
     Generics, Id, Impl, Item, ItemEnum, Type, Variant, WherePredicate,
 };
 
-use super::item_utils;
 
 /// Internal helper to keep track of state while analyzing the JSON
-#[allow(clippy::module_name_repetitions)]
 pub struct PublicItemBuilder<'a> {
     /// Maps an item ID to the container that contains it. Note that the
     /// container itself also is an item. E.g. an enum variant item is contained
@@ -19,7 +17,7 @@ pub struct PublicItemBuilder<'a> {
 impl<'a> PublicItemBuilder<'a> {
     pub fn new(crate_: &'a Crate) -> PublicItemBuilder<'a> {
         Self {
-            container_for_item: item_utils::build_container_for_item_map(crate_),
+            container_for_item: build_container_for_item_map(crate_),
         }
     }
 
@@ -51,7 +49,7 @@ impl<'a> PublicItemBuilder<'a> {
     }
 
     fn prefix_for_item(item: &Item) -> String {
-        format!("pub {} ", item_utils::type_string_for_item(item))
+        format!("pub {} ", type_string_for_item(item))
     }
 
     fn path_for_item(&'a self, item: &'a Item) -> Vec<&'a Item> {
@@ -343,5 +341,63 @@ impl Display for Lifetime<'_> {
         } else {
             Ok(())
         }
+    }
+}
+
+/// Map up what items are contained in what items. We can't limit this to
+/// just our crate (the root crate) since some traits (e.g. Clone) are
+/// defined outside of the root crate.
+fn build_container_for_item_map(crate_: &Crate) -> HashMap<&Id, &Item> {
+    let mut container_for_item = HashMap::new();
+
+    for container in crate_.index.values() {
+        if let Some(items) = items_in_container(container) {
+            for item in items {
+                container_for_item.insert(item, container);
+            }
+        }
+    }
+
+    container_for_item
+}
+
+/// Some items contain other items, which is relevant for analysis. Keep track
+/// of such relationships.
+fn items_in_container(item: &Item) -> Option<&Vec<Id>> {
+    match &item.inner {
+        ItemEnum::Module(m) => Some(&m.items),
+        ItemEnum::Union(u) => Some(&u.fields),
+        ItemEnum::Struct(s) => Some(&s.fields),
+        ItemEnum::Enum(e) => Some(&e.variants),
+        ItemEnum::Trait(t) => Some(&t.items),
+        ItemEnum::Impl(i) => Some(&i.items),
+        ItemEnum::Variant(rustdoc_types::Variant::Struct(ids)) => Some(ids),
+        // TODO: `ItemEnum::Variant(rustdoc_types::Variant::Tuple(ids)) => Some(ids),` when https://github.com/rust-lang/rust/issues/92945 is fixed
+        _ => None,
+    }
+}
+
+pub fn type_string_for_item(item: &Item) -> &str {
+    match &item.inner {
+        ItemEnum::Module(_) => "mod",
+        ItemEnum::ExternCrate { .. } => "extern crate",
+        ItemEnum::Import(_) => "use",
+        ItemEnum::Union(_) => "union",
+        ItemEnum::Struct(_) => "struct",
+        ItemEnum::StructField(_) => "struct field",
+        ItemEnum::Enum(_) => "enum",
+        ItemEnum::Variant(_) => "enum variant",
+        ItemEnum::Function(_) | ItemEnum::Method(_) => "fn",
+        ItemEnum::Trait(_) => "trait",
+        ItemEnum::TraitAlias(_) => "trait alias",
+        ItemEnum::Impl(_) => "impl",
+        ItemEnum::Typedef(_) | ItemEnum::AssocType { .. } => "type",
+        ItemEnum::OpaqueTy(_) => "opaque ty",
+        ItemEnum::Constant(_) | ItemEnum::AssocConst { .. } => "const",
+        ItemEnum::Static(_) => "static",
+        ItemEnum::ForeignType => "foreign type",
+        ItemEnum::Macro(_) => "macro",
+        ItemEnum::ProcMacro(_) => "proc macro",
+        ItemEnum::PrimitiveType(name) => name,
     }
 }
