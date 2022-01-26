@@ -122,21 +122,20 @@ struct ItemSuffix<'a>(&'a Item);
 impl Display for ItemSuffix<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.0.inner {
-            _ => Ok(()),
             ItemEnum::Module(_) => Ok(()),
             ItemEnum::ExternCrate { name, rename } => todo!(),
             ItemEnum::Import(_) => todo!(),
             ItemEnum::Union(_) => todo!(),
-            ItemEnum::Struct(s) => todo!(),
+            ItemEnum::Struct(s) => write!(f, "{}", D(&s.generics)),
             ItemEnum::StructField(type_) => write!(f, ": {}", D(type_)),
-            ItemEnum::Enum(e) => write!(f, ": {}", D(e)),
-            ItemEnum::Variant(_) => todo!(),
+            ItemEnum::Enum(e) => write!(f, ": {:?}", e),
+            ItemEnum::Variant(v) => write!(f, ": {:?}", v),
             ItemEnum::Function(fn_) => write!(f, "{}", FnDeclaration(&fn_.decl)),
             ItemEnum::Trait(_) => todo!(),
             ItemEnum::TraitAlias(_) => todo!(),
             ItemEnum::Method(m) => write!(f, "{}", FnDeclaration(&m.decl)),
             ItemEnum::Impl(_) => todo!(),
-            ItemEnum::Typedef(_) => todo!(),
+            ItemEnum::Typedef(t) => write!(f, "{:?}", t),
             ItemEnum::OpaqueTy(_) => todo!(),
             ItemEnum::Constant(_) => todo!(),
             ItemEnum::Static(_) => todo!(),
@@ -161,6 +160,11 @@ impl Display for D<&Generics> {
         Ok(())
     }
 }
+// macro_rules!  {
+//     () => {
+        
+//     };
+// }
 
 impl Display for D<&GenericParamDef> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
