@@ -5,6 +5,8 @@ use thiserror::Error;
 pub enum Error {
     #[error(transparent)]
     SerdeJsonError(#[from] serde_json::Error),
+    #[error("No root item found")]
+    NoRootItemFound,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

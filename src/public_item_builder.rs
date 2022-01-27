@@ -5,6 +5,23 @@ use rustdoc_types::{
     Generics, Id, Impl, Item, ItemEnum, Type, Variant, WherePredicate,
 };
 
+fn recursively_collect_child_items_from(root_item: &Item) -> Vec<&Item> {
+    let result = vec![];
+
+    let mut items_left_to_process = vec![root_item];
+
+    while let Some(item) = items_left_to_process.pop() {
+        if let Some(items) = items_in_container(&item) {
+            items_left_to_process.extend(items);
+
+        }
+    }
+    result.push(root_item);
+
+
+
+    result
+}
 
 /// Internal helper to keep track of state while analyzing the JSON
 pub struct PublicItemBuilder<'a> {

@@ -31,6 +31,9 @@ pub use error::Result;
 /// E.g. if the JSON is invalid.
 pub fn sorted_public_items_from_rustdoc_json_str(rustdoc_json_str: &str) -> Result<Vec<String>> {
     let crate_: Crate = serde_json::from_str(rustdoc_json_str)?;
+    let root_item = crate_.index.get(&crate_.root).ok_or(Error::NoRootItemFound)?;
+
+    let items = recursively_collect_child_items_from(root_item);
 
     let builder = public_item_builder::PublicItemBuilder::new(&crate_);
 
