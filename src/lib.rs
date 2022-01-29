@@ -1,5 +1,3 @@
-use std::ops::Index;
-
 use rustdoc_types::Crate;
 
 mod error;
