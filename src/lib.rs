@@ -1,5 +1,6 @@
-use rustdoc_types::{Crate, Item, ItemEnum};
+use std::ops::Index;
 
+use rustdoc_types::Crate;
 
 mod error;
 mod public_item_builder;
@@ -9,6 +10,8 @@ pub use error::Error;
 
 /// The crate result type.
 pub use error::Result;
+use rustdoc_types::Id;
+use rustdoc_types::Item;
 
 /// Takes rustdoc JSON and returns a [`Vec`] of [`String`]s where each
 /// [`String`] is one public item of the crate, i.e. part of the crate's public
@@ -29,7 +32,7 @@ pub use error::Result;
 /// # Errors
 ///
 /// E.g. if the JSON is invalid.
-pub fn sorted_public_items_from_rustdoc_json_str(rustdoc_json_str: &str) -> Result<Vec<String>> {
+pub fn sorted_public_items_from_rustdoc_json_str(rustdoc_json_str: &str) -> crate::Result<Vec<String>> {
     let crate_: Crate = serde_json::from_str(rustdoc_json_str)?;
     let root_item = crate_.index.get(&crate_.root).ok_or(Error::NoRootItemFound)?;
 
@@ -49,16 +52,53 @@ pub fn sorted_public_items_from_rustdoc_json_str(rustdoc_json_str: &str) -> Resu
     Ok(result)
 }
 
-/// Private helper to check if an item is relevant to include in the output.
-///
-/// * Only the items in the root crate (the "current" crate) are relevant.
-///
-/// * The items of implementations themselves are excluded. It is sufficient to
-///   report items _associated_ with implementations.
-fn item_is_relevant(item: &Item) -> bool {
-    let is_part_of_root_crate = item.crate_id == 0 /* ROOT_CRATE_ID */;
+struct IndexIterator<'a> {
+    crate_: &'a Crate,
+    // visited_items: std::collections::HashSet<Id>, TODO: Needed? Can recurse?
+    ids_left_to_visit: Vec<Id>,
+}
 
-    let is_impl = matches!(item.inner, ItemEnum::Impl(_));
+impl<'a> IndexIterator<'a> {
+    fn new(crate_: &'a Crate) -> Self {
+        IndexIterator {
+            crate_,
+            ids_left_to_visit: vec![crate_.root],
+        }
+    }
+}
 
-    is_part_of_root_crate && !is_impl
+impl<'a> Iterator for IndexIterator<'a> {
+    type Item = &'a Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        todo!()
+    }
+}
+
+struct Im {
+    path: Vec<Item>,
+}
+
+impl Im {
+    fn print_item(item: &Item) {
+        
+    }
+}
+
+fn recursively_collect_child_items_from(root_item: &Item) -> Vec<&Item> {
+    let result = vec![];
+ 
+    let mut items_left_to_process = vec![root_item];
+ 
+    while let Some(item) = items_left_to_process.pop() {
+        if let Some(items) = items_in_container(&item) {
+            items_left_to_process.extend(items);
+ 
+        }
+    }
+    result.push(root_item);
+ 
+ 
+ 
+    result
 }

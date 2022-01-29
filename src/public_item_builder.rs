@@ -1,17 +1,98 @@
-use std::{collections::HashMap, fmt::Display};
+
+use std::fmt::Result;
+use std::fmt::Display;
+
+struct ItemPath<'a>(&'a [Item]);
+struct ItemInPath<'a>(&'a Item, ItemPath<'a>);
+
+impl Display for ItemInPath<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let type_str = type_string_for_item(self.0);
+        let path_str = self.1;
+        let _s = [String::from("1")].join(", ");
+
+        write!(f, "pub {type_str} {path_str}")
+    }
+}
+
+impl Display for D<&Item> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{}",         match self.0.inner {
+            ItemEnum::Module(_) => todo!(),
+            ItemEnum::ExternCrate { name, rename } => todo!(),
+            ItemEnum::Import(_) => todo!(),
+            ItemEnum::Union(_) => todo!(),
+            ItemEnum::Struct(_) => todo!(),
+            ItemEnum::StructField(_) => todo!(),
+            ItemEnum::Enum(_) => todo!(),
+            ItemEnum::Variant(_) => todo!(),
+            ItemEnum::Function(_) => todo!(),
+            ItemEnum::Trait(_) => todo!(),
+            ItemEnum::TraitAlias(_) => todo!(),
+            ItemEnum::Method(_) => todo!(),
+            ItemEnum::Impl(_) => todo!(),
+            ItemEnum::Typedef(_) => todo!(),
+            ItemEnum::OpaqueTy(_) => todo!(),
+            ItemEnum::Constant(_) => todo!(),
+            ItemEnum::Static(_) => todo!(),
+            ItemEnum::ForeignType => todo!(),
+            ItemEnum::Macro(_) => todo!(),
+            ItemEnum::ProcMacro(_) => todo!(),
+            ItemEnum::PrimitiveType(_) => todo!(),
+            ItemEnum::AssocConst { type_, default } => todo!(),
+            ItemEnum::AssocType { bounds, default } => todo!(),
+        }
+)
+    }
+}
+
+impl Display for ItemPath<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        todo!()
+    }
+}
+
+fn type_string_for_item(item: &Item) -> &str {
+    match &item.inner {
+        ItemEnum::Module(_) => "mod",
+        ItemEnum::ExternCrate { .. } => "extern crate",
+        ItemEnum::Import(_) => "use",
+        ItemEnum::Union(_) => "union",
+        ItemEnum::Struct(_) => "struct",
+        ItemEnum::StructField(_) => "struct field",
+        ItemEnum::Enum(_) => "enum",
+        ItemEnum::Variant(_) => "enum variant",
+        ItemEnum::Function(_) | ItemEnum::Method(_) => "fn",
+        ItemEnum::Trait(_) => "trait",
+        ItemEnum::TraitAlias(_) => "trait alias",
+        ItemEnum::Impl(_) => "impl",
+        ItemEnum::Typedef(_) | ItemEnum::AssocType { .. } => "type",
+        ItemEnum::OpaqueTy(_) => "opaque ty",
+        ItemEnum::Constant(_) | ItemEnum::AssocConst { .. } => "const",
+        ItemEnum::Static(_) => "static",
+        ItemEnum::ForeignType => "foreign type",
+        ItemEnum::Macro(_) => "macro",
+        ItemEnum::ProcMacro(_) => "proc macro",
+        ItemEnum::PrimitiveType(name) => name,
+    }
+}
+
+
+use std::{collections::HashMap, fmt::Formatter};
 
 use rustdoc_types::{
     Crate, FnDecl, GenericArg, GenericArgs, GenericBound, GenericParamDef, GenericParamDefKind,
     Generics, Id, Impl, Item, ItemEnum, Type, Variant, WherePredicate,
 };
 
-fn recursively_collect_child_items_from(root_item: &Item) -> Vec<&Item> {
+pub fn recursively_collect_child_items_from(crate_: Crate, root_item: &Item) -> Vec<&Item> {
     let result = vec![];
 
     let mut items_left_to_process = vec![root_item];
 
     while let Some(item) = items_left_to_process.pop() {
-        if let Some(items) = items_in_container(&item) {
+        let f = items_in_container(item).iter().flatten().map(|id| crate_.index.get(id));
+        if let Some(items) = .iter().map(|id|crate_.index.get(id) {
             items_left_to_process.extend(items);
 
         }
@@ -19,7 +100,7 @@ fn recursively_collect_child_items_from(root_item: &Item) -> Vec<&Item> {
     result.push(root_item);
 
 
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                       
     result
 }
 
@@ -115,7 +196,7 @@ fn get_effective_name(item: &Item) -> &str {
 
 struct FnDeclaration<'a>(&'a FnDecl);
 impl Display for FnDeclaration<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
         write!(
             f,
             "({})",
@@ -136,7 +217,7 @@ impl Display for FnDeclaration<'_> {
 
 struct ItemSuffix<'a>(&'a Item);
 impl Display for ItemSuffix<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
         match &self.0.inner {
             ItemEnum::Module(_) | ItemEnum::Import(_)=> Ok(()),
             ItemEnum::ExternCrate { name, rename } => todo!(),
@@ -164,7 +245,7 @@ impl Display for ItemSuffix<'_> {
 }
 
 impl Display for D<&Generics> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
         if !self.0.params.is_empty() {
             write!(f, "<{}>", Joiner(&self.0.params, ", ", |f| D(f)))?;
         }
@@ -181,7 +262,7 @@ impl Display for D<&Generics> {
 }
 
 impl Display for D<&Variant> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
         match self.0 {
             Variant::Plain => Ok(()),
             Variant::Tuple(types) => write!(f, "({})", Joiner(&types, ",", |f| D(f))),
@@ -204,19 +285,19 @@ impl Display for D<&Variant> {
 // });
 
 impl Display for D<&GenericParamDef> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
         write!(f, "{}{}", self.0.name, D(&self.0.kind))
     }
 }
 
 impl Display for D<&WherePredicate> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
         todo!()
     }
 }
 
 impl Display for D<&GenericParamDefKind> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
         match self.0 {
             GenericParamDefKind::Lifetime { outlives } => {
                 if !outlives.is_empty() {
@@ -236,14 +317,14 @@ impl Display for D<&GenericParamDefKind> {
 }
 
 impl Display for D<&GenericBound> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
         todo!()
     }
 }
 
 struct Joiner<'a, T, D: Display>(&'a Vec<T>, &'static str, fn(&'a T) -> D);
 impl<'a, T, D: Display> Display for Joiner<'a, T, D> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
         write!(
             f,
             "{}",
@@ -257,7 +338,7 @@ impl<'a, T, D: Display> Display for Joiner<'a, T, D> {
 }
 
 impl Display for D<&GenericArgs> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
         match self.0 {
             GenericArgs::AngleBracketed { args, bindings } => {
                 if !args.is_empty() {
@@ -278,7 +359,7 @@ impl Display for D<&GenericArgs> {
 struct D<T>(T);
 
 impl Display for D<&GenericArg> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
         match &self.0 {
             GenericArg::Lifetime(l) => write!(f, "{}", l),
             GenericArg::Type(t) => write!(f, "{}", D(t)),
@@ -289,7 +370,7 @@ impl Display for D<&GenericArg> {
 }
 
 impl Display for D<&Type> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
         match &self.0 {
             Type::ResolvedPath {
                 name,
@@ -345,14 +426,14 @@ impl Display for D<&Type> {
 
 struct Mutable(bool);
 impl Display for Mutable {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
         write!(f, "{}", if self.0 { "mut " } else { "" })
     }
 }
 
 struct Lifetime<'a>(&'a Option<String>);
 impl Display for Lifetime<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
         if let Some(lifetime) = self.0 {
             write!(f, "'{} ", lifetime)
         } else {
@@ -380,7 +461,7 @@ fn build_container_for_item_map(crate_: &Crate) -> HashMap<&Id, &Item> {
 
 /// Some items contain other items, which is relevant for analysis. Keep track
 /// of such relationships.
-fn items_in_container(item: &Item) -> Option<&Vec<Id>> {
+fn items_in_container(item: &Item) -> Option<&[Id]> {
     match &item.inner {
         ItemEnum::Module(m) => Some(&m.items),
         ItemEnum::Union(u) => Some(&u.fields),
@@ -394,27 +475,3 @@ fn items_in_container(item: &Item) -> Option<&Vec<Id>> {
     }
 }
 
-pub fn type_string_for_item(item: &Item) -> &str {
-    match &item.inner {
-        ItemEnum::Module(_) => "mod",
-        ItemEnum::ExternCrate { .. } => "extern crate",
-        ItemEnum::Import(_) => "use",
-        ItemEnum::Union(_) => "union",
-        ItemEnum::Struct(_) => "struct",
-        ItemEnum::StructField(_) => "struct field",
-        ItemEnum::Enum(_) => "enum",
-        ItemEnum::Variant(_) => "enum variant",
-        ItemEnum::Function(_) | ItemEnum::Method(_) => "fn",
-        ItemEnum::Trait(_) => "trait",
-        ItemEnum::TraitAlias(_) => "trait alias",
-        ItemEnum::Impl(_) => "impl",
-        ItemEnum::Typedef(_) | ItemEnum::AssocType { .. } => "type",
-        ItemEnum::OpaqueTy(_) => "opaque ty",
-        ItemEnum::Constant(_) | ItemEnum::AssocConst { .. } => "const",
-        ItemEnum::Static(_) => "static",
-        ItemEnum::ForeignType => "foreign type",
-        ItemEnum::Macro(_) => "macro",
-        ItemEnum::ProcMacro(_) => "proc macro",
-        ItemEnum::PrimitiveType(name) => name,
-    }
-}
