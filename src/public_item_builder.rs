@@ -459,19 +459,3 @@ fn build_container_for_item_map(crate_: &Crate) -> HashMap<&Id, &Item> {
     container_for_item
 }
 
-/// Some items contain other items, which is relevant for analysis. Keep track
-/// of such relationships.
-fn items_in_container(item: &Item) -> Option<&[Id]> {
-    match &item.inner {
-        ItemEnum::Module(m) => Some(&m.items),
-        ItemEnum::Union(u) => Some(&u.fields),
-        ItemEnum::Struct(s) => Some(&s.fields),
-        ItemEnum::Enum(e) => Some(&e.variants),
-        ItemEnum::Trait(t) => Some(&t.items),
-        ItemEnum::Impl(i) => Some(&i.items),
-        ItemEnum::Variant(rustdoc_types::Variant::Struct(ids)) => Some(ids),
-        // TODO: `ItemEnum::Variant(rustdoc_types::Variant::Tuple(ids)) => Some(ids),` when https://github.com/rust-lang/rust/issues/92945 is fixed
-        _ => None,
-    }
-}
-
